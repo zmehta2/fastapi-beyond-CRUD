@@ -23,10 +23,17 @@ jobs:
         run: docker compose up -d --build
 
       - name: Wait for services to be ready
-        run: sleep 10
+        run: |
+          # Wait for PostgreSQL
+          timeout 30s bash -c 'until docker compose exec -T db pg_isready -U postgres; do sleep 1; done'
+          # Wait additional time for other services
+          sleep 10
 
-      - name: Run Tests
-        run: docker compose run web pytest
+          - name: Run migrations
+            run: docker compose exec -T web alembic upgrade head
+
+          - name: Run Tests
+            run: docker compose exec -T web pytest
 #      - name: Set up Python
 #        uses: actions/setup-python@v3
 #        with:
