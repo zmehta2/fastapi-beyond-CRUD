@@ -18,7 +18,7 @@ click-repl==0.3.0
 dnspython==2.6.1
 email_validator==2.2.0
 exceptiongroup==1.2.2
-fastapi==0.111.0
+fastapi==0.115.8
 fastapi-cli==0.0.5
 fastapi-mail==1.4.1
 flower==2.0.1

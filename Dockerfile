@@ -2,16 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Copy the current directory contents into the container at /app
+COPY . /app
 
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Install the PostgreSQL dialect for SQLAlchemy
+RUN pip install psycopg2-binary
+
+# Run pytest to test the application
+RUN pytest
 
 EXPOSE 8000
-
-ENV HOST 0.0.0.0
-
-RUN pytest
 
 CMD ["fastapi","run","src","--port","8000","--host","0.0.0.0"]
