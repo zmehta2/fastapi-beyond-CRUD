@@ -17,13 +17,16 @@ jobs:
         run: cp .env.example .env
 
       - name: Set up Docker Compose
-        run: sudo apt-get install docker-compose
+        run: docker compose version
 
-      - name: Run Docker on Ubuntu
-        run: docker-compose up -d --build
+      - name: Build and start containers
+        run: docker compose up -d --build
 
-      - name: Run Tests in the Container
-        run: docker-compose exec -T web pytest
+      - name: Wait for services to be ready
+        run: sleep 10
+
+      - name: Run Tests
+        run: docker compose run web pytest
 #      - name: Set up Python
 #        uses: actions/setup-python@v3
 #        with:
