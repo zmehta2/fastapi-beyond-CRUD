@@ -1,72 +1,54 @@
-version: "3.0"
+version: "3.8"
 
 services:
-  web:
-    build: .
-    volumes:
-      - .:/app
-    env_file: .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_ALGORITHM: ${JWT_ALGORITHM}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-      MAIL_SERVER: ${MAIL_SERVER}
-      MAIL_PORT: ${MAIL_PORT}
-      MAIL_FROM: ${MAIL_FROM}
-      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
-      DOMAIN: ${DOMAIN}
-      REDIS_URL: ${REDIS_URL}
-    ports:
-      - "8000:8000"
-
-    depends_on:
-      - db
-      - redis
-
-    networks:
-      - app-network
-
   db:
     image: postgres:15
-
+    container_name: fastapi-postgres
+    restart: always
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
       POSTGRES_DB: bookly
-      POSTGRES_PASSWORD: testpass
-
     ports:
-     - "5432:5432"
-
+      - "5432:5432"
+    networks:
+      - app-network
     volumes:
       - db-data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:6.2
+    container_name: fastapi-redis
+    restart: always
+    ports:
+      - "6379:6379"
     networks:
       - app-network
-  redis:
-    image: redis:6
-
-    ports:
-     - "6379:6379"
-
-    networks:
-     - app-network
 
   celery:
     build: .
-
-    command: celery -A src.celery_tasks.c_app worker --loglevel=INFO
-
-    volumes:
-      - .:/app
-
+    container_name: fastapi-celery
+    restart: always
     depends_on:
       - redis
-
+      - web
     environment:
-      REDIS_URL: ${REDIS_URL}
+      CELERY_BROKER_URL: redis://fastapi-redis:6379/0
+      CELERY_RESULT_BACKEND: redis://fastapi-redis:6379/0
+    networks:
+      - app-network
 
+  web:
+    build: .
+    container_name: fastapi-app
+    restart: always
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
     networks:
       - app-network
 
