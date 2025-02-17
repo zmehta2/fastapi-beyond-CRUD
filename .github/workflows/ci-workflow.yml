@@ -7,33 +7,25 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test-and-build:
+  build:
+    name: Run Nightly Build in PST
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Copy .env.example to .env
         run: cp .env.example .env
 
       - name: Set up Docker Compose
-        run: docker compose version
+        run: sudo apt-get install docker-compose
 
-      - name: Build and start containers
-        run: docker compose up -d --build
+      - name: Run Docker on Ubuntu
+        run: docker-compose up -d --build
 
-      - name: Wait for services to be ready
-        run: |
-          # Wait for PostgreSQL
-          timeout 30s bash -c 'until docker compose exec -T db pg_isready -U postgres; do sleep 1; done'
-          # Wait additional time for other services
-          sleep 10
-
-          - name: Run migrations
-            run: docker compose exec -T web alembic upgrade head
-
-          - name: Run Tests
-            run: docker compose exec -T web pytest
+      - name: Run Tests in the Container
+        run: docker-compose exec -T web pytest
 #      - name: Set up Python
 #        uses: actions/setup-python@v3
 #        with:
