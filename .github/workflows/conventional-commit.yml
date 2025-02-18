@@ -51,32 +51,7 @@ jobs:
           
           See: https://www.conventionalcommits.org"
 
-      - name: Send Email Notification
-        if: steps.check.outputs.invalid == 'true'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.MAIL_SERVER }}
-          server_port: ${{ secrets.MAIL_PORT }}
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-          from: ${{ secrets.MAIL_FROM }}
-          to: ${{ github.event.pull_request.user.email }}
-          body: |
-            Your pull request #${{ github.event.pull_request.number }} was closed due to invalid commit messages.
-            
-            Please ensure all commits follow the Conventional Commits specification:
-            - Format: type(scope): description
-            - Types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert
-            
-            Example: feat(auth): add login system
-            
-            Invalid commits found:
-            ${{ steps.check.outputs.invalid_commits }}
-            
-            For more information, visit: https://www.conventionalcommits.org
-            
-            Repository: ${{ github.repository }}
-            PR Link: ${{ github.event.pull_request.html_url }}
+
 #  notify-on-failure:
 #    needs: conventional-commit-check
 #    runs-on: ubuntu-latest
