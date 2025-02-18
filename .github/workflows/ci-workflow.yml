@@ -1,10 +1,8 @@
 name: Nightly Build
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   test-and-build:
@@ -32,6 +30,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
 
       - name: Set up Python
         uses: actions/setup-python@v4
