@@ -1,55 +1,58 @@
-name: "Conventional Commits Check"
+name: Conventional Commits Validator
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  workflow_dispatch:  #
+  workflow_dispatch:
 
 jobs:
-  conventional-commit-check:
+  validate:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Fetch PR Commits
-        id: commits
+      - name: Check Commits
+        id: check
         run: |
-          git fetch origin +refs/pull/${{ github.event.pull_request.number }}/head
-          commits=$(git log --format='%s' origin/${{ github.head_ref }})
-          echo "COMMITS<<EOF" >> $GITHUB_ENV
-          echo "$commits" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Validate Conventional Commits
-        id: validate
-        continue-on-error: true
-        run: |
-          regex="^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([\w\-]+\))?!?: .+$"
+          PATTERN="^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([\w\-]+\))?!?: .+"
+          commits=$(git log --format=%s origin/${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+          
+          invalid_commits=()
           while IFS= read -r commit; do
-            if [[ ! $commit =~ $regex ]]; then
-              echo "❌ Invalid commit message: $commit"
-              echo "INVALID=true" >> $GITHUB_ENV
-              break
+            if [[ ! $commit =~ $PATTERN ]]; then
+              invalid_commits+=("$commit")
             fi
-          done <<<"${{ env.COMMITS }}"
+          done <<< "$commits"
+          
+          if [ ${#invalid_commits[@]} -gt 0 ]; then
+            echo "invalid_commits=${invalid_commits[*]}" >> $GITHUB_OUTPUT
+            echo "invalid=true" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Close PR if Invalid Commits
-        if: env.INVALID == 'true'
-        run: |
-          gh pr close ${{ github.event.pull_request.number }} --comment "🚨 **PR closed due to invalid commit messages.**  
-          🔹 Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) and reopen your PR."
+      - name: Close PR
+        if: steps.check.outputs.invalid == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr close ${{ github.event.pull_request.number }} --comment "
+          🚨 PR closed: Invalid commit messages found
+          
+          Invalid commits:
+          ${{ steps.check.outputs.invalid_commits }}
+          
+          Please follow the format:
+          type(scope): description
+          
+          Valid types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert
+          
+          Example: feat(auth): add login system
+          
+          See: https://www.conventionalcommits.org"
 
-  notify-on-failure:
-    needs: conventional-commit-check
-    runs-on: ubuntu-latest
-    if: failure()
-
-    steps:
-      - name: Send Failure Email via Ethereal
+      - name: Send Email Notification
+        if: steps.check.outputs.invalid == 'true'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.MAIL_SERVER }}
@@ -57,6 +60,37 @@ jobs:
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
           from: ${{ secrets.MAIL_FROM }}
-          to: "zinal96.mehta@gmail.com"
-          subject: "🚨 PR Closed: Invalid Commit Message"
-          body: "Your PR was closed because commit messages did not follow Conventional Commit guidelines. Please fix and reopen."
+          to: ${{ github.event.pull_request.user.email }}
+          body: |
+            Your pull request #${{ github.event.pull_request.number }} was closed due to invalid commit messages.
+            
+            Please ensure all commits follow the Conventional Commits specification:
+            - Format: type(scope): description
+            - Types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert
+            
+            Example: feat(auth): add login system
+            
+            Invalid commits found:
+            ${{ steps.check.outputs.invalid_commits }}
+            
+            For more information, visit: https://www.conventionalcommits.org
+            
+            Repository: ${{ github.repository }}
+            PR Link: ${{ github.event.pull_request.html_url }}
+#  notify-on-failure:
+#    needs: conventional-commit-check
+#    runs-on: ubuntu-latest
+#    if: failure()
+#
+#    steps:
+#      - name: Send Failure Email via Ethereal
+#        uses: dawidd6/action-send-mail@v3
+#        with:
+#          server_address: ${{ secrets.MAIL_SERVER }}
+#          server_port: ${{ secrets.MAIL_PORT }}
+#          username: ${{ secrets.MAIL_USERNAME }}
+#          password: ${{ secrets.MAIL_PASSWORD }}
+#          from: ${{ secrets.MAIL_FROM }}
+#          to: "zinal96.mehta@gmail.com"
+#          subject: "🚨 PR Closed: Invalid Commit Message"
+#          body: "Your PR was closed because commit messages did not follow Conventional Commit guidelines. Please fix and reopen."
