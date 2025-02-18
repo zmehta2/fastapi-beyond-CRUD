@@ -13,6 +13,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug Info
+        run: env
+
       - name: Fetch PR Commits
         id: commits
         run: |
@@ -21,9 +24,6 @@ jobs:
           echo "COMMITS<<EOF" >> $GITHUB_ENV
           echo "$commits" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-
-      - name: Debug Info
-        run: env
 
       - name: Validate Conventional Commits
         id: validate
