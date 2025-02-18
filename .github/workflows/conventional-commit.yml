@@ -13,16 +13,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch PR Commits
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+          git checkout pr-branch
+
       - name: Check Commits
         id: check
         run: |
           PATTERN="^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([\w\-]+\))?!?: .+"
-          commits=$(git log --format=%s origin/${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+          
+          # Get commits from PR
+          commits=$(git log --format=%s $(git merge-base origin/${{ github.event.pull_request.base.ref }} HEAD)..HEAD)
           
           invalid_commits=()
           while IFS= read -r commit; do
             if [[ ! $commit =~ $PATTERN ]]; then
               invalid_commits+=("$commit")
+              echo "Invalid commit found: $commit"
             fi
           done <<< "$commits"
           
@@ -30,7 +38,6 @@ jobs:
             echo "invalid_commits=${invalid_commits[*]}" >> $GITHUB_OUTPUT
             echo "invalid=true" >> $GITHUB_OUTPUT
           fi
-
       - name: Close PR
         if: steps.check.outputs.invalid == 'true'
         env:
