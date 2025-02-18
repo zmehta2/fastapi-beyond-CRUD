@@ -92,7 +92,6 @@ jobs:
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
           from: ${{ secrets.MAIL_FROM }}
-          to: "zmehta2@dons.usfca.edu"
+          to: "zinal96.mehta@gmail.com"
           subject: "Nightly Build Failed"
           body: "The nightly build has failed. Please check logs."
-          content_type: text/plain
