@@ -4,6 +4,12 @@ name: Nightly Build
 #  schedule:
 #    - cron: "0 0 * * *"  # Runs at 12 AM UTC daily
 
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
