@@ -76,5 +76,23 @@ Run the tests using this command
 pytest
 ```
 
+## CI Workflows
+
+### Check Conventional Commits
+All commit messages made to feature branches must follow the **Conventional Commit** format. When a pull request is created from a feature branch to the `main` branch, the **check-conventional-commit** workflow runs automatically to validate the commit messages.
+
+- If the commit messages do not comply with the format, the workflow will fail, and a notification will be sent.
+- You can find the workflow definition in `.github/workflows/conventional-commit.yml`.
+
+### Nightly Build
+The `main` branch is configured to trigger a **nightly build** every day at **12:00 AM PST**. 
+
+This workflow performs the following steps:
+1. **Builds and runs** the application inside a Docker container.
+2. **Executes all tests** to ensure the application is working correctly.
+3. **Pushes the latest container image** to DockerHub.
+
+To obtain the latest container image, visit the **Docker registry**.
+
 ## Contributing
 I welcome contributions to improve the documentation! You can contribute [here](https://github.com/jod35/fastapi-beyond-crud-docs).
